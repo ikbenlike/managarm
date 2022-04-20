@@ -252,6 +252,15 @@ head(128):
 
 		// returned by CREATE_TIMER
 		tag(40) uint64 timerid;
+
+		// returned by timer overrun request
+		tag(41) uint32 timer_overrun;
+
+		// returned by timer settime and gettime requests
+		tag(42) uint64 timer_interval_sec;
+		tag(43) uint64 timer_interval_nsec;
+		tag(44) uint64 timer_value_sec;
+		tag(45) uint64 timer_value_nsec;
 	}
 }
 
@@ -502,4 +511,30 @@ head(128):
 tail:
 	uint32 sival_is_id; //should be a boolean
 	uint64 notify_func;
+}
+
+message TimerDeleteRequest 91 {
+head(128):
+	uint64 timerid;
+}
+
+message TimerOverrunRequest 92 {
+head(128):
+	uint64 timerid;
+}
+
+message TimerSettimeRequest 93 {
+head(128):
+	uint64 timerid;
+	uint32 flags;
+tail:
+	uint64 interval_sec;
+	uint64 interval_nsec;
+	uint64 value_sec;
+	uint64 value_nsec;
+}
+
+message TimerGettimeRequest 94 {
+head(128):
+	uint64 timerid;
 }
