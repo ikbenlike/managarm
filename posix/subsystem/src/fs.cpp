@@ -16,6 +16,10 @@ async::result<frg::expected<Error>> FsLink::obstruct() {
 	co_return Error::illegalOperationTarget;
 }
 
+async::result<frg::expected<Error>> FsLink::deobstruct() {
+	throw std::runtime_error("posix: Object does not implement FsLink::deobstruct()");
+}
+
 // --------------------------------------------------------
 // FsNode implementation.
 // --------------------------------------------------------

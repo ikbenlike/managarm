@@ -52,6 +52,7 @@ public:
 	virtual std::string getName() = 0;
 	virtual std::shared_ptr<FsNode> getTarget() = 0;
 	virtual async::result<frg::expected<Error>> obstruct();
+	virtual async::result<frg::expected<Error>> deobstruct();
 };
 
 struct FsSuperblock {
