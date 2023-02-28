@@ -111,7 +111,7 @@ protected:
 	~FsNode() = default;
 
 public:
-	virtual VfsType getType();
+	virtual async::result<VfsType> getType();
 
 	// TODO: This should be async.
 	virtual async::result<frg::expected<Error, FileStats>> getStats();
@@ -221,9 +221,9 @@ private:
 	// SpecialLinks can never be linked into "real" file systems,
 	// hence the can only ever be one link per node.
 	struct EmbeddedNode final : FsNode {
-		VfsType getType() override {
+		async::result<VfsType> getType() override {
 			auto node = frg::container_of(this, &SpecialLink::embeddedNode_);
-			return node->fileType_;
+			co_return node->fileType_;
 		}
 
 		async::result<frg::expected<Error, FileStats>> getStats() override {

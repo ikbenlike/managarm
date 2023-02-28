@@ -559,7 +559,7 @@ async::result<void> serveRequests(std::shared_ptr<Process> self,
 				}
 				auto source = sourceResult.value();
 				assert(source.second);
-				assert(source.second->getTarget()->getType() == VfsType::blockDevice);
+				assert(co_await source.second->getTarget()->getType() == VfsType::blockDevice);
 				auto device = blockRegistry.get(source.second->getTarget()->readDevice());
 				auto link = co_await device->mount();
 				co_await target.first->mount(target.second, std::move(link));
@@ -1347,7 +1347,7 @@ async::result<void> serveRequests(std::shared_ptr<Process> self,
 			resp.set_error(managarm::posix::Errors::SUCCESS);
 
 			DeviceId devnum;
-			switch(target_link->getTarget()->getType()) {
+			switch(co_await target_link->getTarget()->getType()) {
 			case VfsType::regular:
 				resp.set_file_type(managarm::posix::FileType::FT_REGULAR);
 				break;
@@ -1374,7 +1374,7 @@ async::result<void> serveRequests(std::shared_ptr<Process> self,
 				resp.set_file_type(managarm::posix::FileType::FT_FIFO);
 				break;
 			default:
-				assert(target_link->getTarget()->getType() == VfsType::null);
+				assert(co_await target_link->getTarget()->getType() == VfsType::null);
 			}
 
 			if(stats.mode & ~0xFFFu)
