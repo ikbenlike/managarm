@@ -951,6 +951,52 @@ public:
 		co_return File::constructHandle(std::move(fuse_file));
 	}
 
+private:
+	async::result<Error> setattr(fuse_setattr_in data_in) {
+		std::cout << "FuseNode::setattr()" << std::endl;
+		uint64_t unique = m_fuse_file->m_queue.get_unique();
+		fuse_in_header head_in = {
+			.len = static_cast<uint32_t>(sizeof(fuse_in_header) + sizeof(fuse_setattr_in)),
+			.opcode = FUSE_SETATTR,
+			.unique = unique,
+			.nodeid = m_node_id,
+		};
+
+		auto request = requestToVector(&head_in, &data_in);
+		auto out = co_await m_fuse_file->performRequest(request, unique, sizeof(fuse_out_header));
+		fuse_out_header head_out;
+		copyStructFromSpan(&head_out, out);
+
+		if(head_out.error) {
+			co_return Error::accessDenied; //TODO: map
+		}
+
+		co_return Error::success;
+	}
+
+public:
+	async::result<Error> chmod(int mode) override {
+		std::cout << "FuseNode::chmod()" << std::endl;
+		fuse_setattr_in data_in = {
+			.valid = FATTR_MODE,
+			.mode = static_cast<uint32_t>(mode),
+		};
+		co_return co_await setattr(data_in);
+	}
+
+	async::result<Error> utimensat(uint64_t atime_sec, uint64_t atime_nsec, uint64_t mtime_sec,
+		uint64_t mtime_nsec) override {
+		std::cout << "FuseNode::utimensat()" << std::endl;
+		fuse_setattr_in data_in = {
+			.valid = FATTR_ATIME | FATTR_MTIME,
+			.atime = atime_sec,
+			.mtime = mtime_sec,
+			.atimensec = static_cast<uint32_t>(atime_nsec),
+			.mtimensec = static_cast<uint32_t>(mtime_nsec),
+		};
+		co_return co_await setattr(data_in);
+	}
+
 	FuseNode(smarter::shared_ptr<FuseDeviceFile, FileHandle> fuse_file, uint64_t node_id){
 		m_fuse_file = fuse_file;
 		m_node_id = node_id;
