@@ -5,6 +5,7 @@
 
 #include "common.hpp"
 #include "fs.hpp"
+#include "src/file.hpp"
 
 // --------------------------------------------------------
 // FsLink implementation.
@@ -95,6 +96,27 @@ async::result<frg::expected<Error>> FsNode::rmdir(std::string) {
 async::result<frg::expected<Error, smarter::shared_ptr<File, FileHandle>>>
 FsNode::open(std::shared_ptr<MountView>, std::shared_ptr<FsLink>, SemanticFlags) {
 	throw std::runtime_error("open() is not implemented for this FsNode");
+}
+
+async::result<frg::expected<Error, smarter::shared_ptr<File, FileHandle>>>
+FsNode::mkRegularAndOpen(std::shared_ptr<MountView> mount, std::string name,
+		SemanticFlags semantic_flags) {
+	assert(this->superblock());
+	auto node = co_await this->superblock()->createRegular();
+	if (!node) {
+		co_return Error::noSuchFile;
+	}
+	// Due to races, link() can fail here.
+	// TODO: Implement a version of link() that eithers links the new node
+	// or returns the current node without failing.
+	auto linkResult = co_await this->link(name, node);
+	assert(linkResult);
+	auto link = linkResult.value();
+	auto fileResult = co_await node->open(mount, std::move(link), semantic_flags);
+	assert(fileResult);
+	auto file = fileResult.value();
+	assert(file);
+	co_return file;
 }
 
 expected<std::string> FsNode::readSymlink(FsLink *link, Process *process) {
